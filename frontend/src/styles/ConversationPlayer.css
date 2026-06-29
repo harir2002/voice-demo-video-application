@@ -1,0 +1,251 @@
+/**
+ * ConversationPlayer Component Styles
+ */
+
+.conversation-player {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  width: 100%;
+}
+
+/* Segment tabs */
+
+.segment-tabs {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md) 0;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  overflow-x: auto;
+}
+
+.tabs-container {
+  display: flex;
+  gap: var(--spacing-xs);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.segment-tab {
+  width: 36px;
+  height: 36px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius-full);
+  background: transparent;
+  color: var(--color-text-lighter);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.segment-tab:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.segment-tab.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+.segment-tab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tab-number {
+  display: inline-block;
+}
+
+/* Progress bar */
+
+.player-progress {
+  width: 100%;
+  height: 6px;
+  background: var(--color-border);
+  border-radius: 3px;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 3px;
+  position: relative;
+  transition: width 0.1s linear;
+}
+
+.progress-handle {
+  position: absolute;
+  right: -6px;
+  top: -5px;
+  width: 16px;
+  height: 16px;
+  background: var(--color-primary);
+  border-radius: var(--border-radius-full);
+  box-shadow: 0 2px 6px rgba(0, 102, 255, 0.3);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.player-progress:hover .progress-handle {
+  opacity: 1;
+}
+
+/* Time display */
+
+.player-time {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-lighter);
+  font-weight: 500;
+}
+
+.current-time {
+  /* Left aligned */
+}
+
+.total-time {
+  /* Right aligned */
+}
+
+/* Controls */
+
+.player-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.control-btn {
+  width: 48px;
+  height: 48px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--border-radius-full);
+  background: white;
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  padding: 0;
+}
+
+.control-btn:hover:not(:disabled) {
+  background: rgba(0, 102, 255, 0.1);
+  border-color: var(--color-primary);
+  transform: scale(1.05);
+}
+
+.control-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.control-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.control-btn svg {
+  width: 24px;
+  height: 24px;
+}
+
+.play-pause {
+  width: 56px;
+  height: 56px;
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: white;
+}
+
+.play-pause:hover:not(:disabled) {
+  background: #0052CC;
+  border-color: #0052CC;
+}
+
+.skip-back,
+.skip-forward {
+  color: var(--color-text);
+}
+
+.skip-back:hover:not(:disabled),
+.skip-forward:hover:not(:disabled) {
+  color: var(--color-primary);
+}
+
+/* Responsive */
+
+@media (max-width: 768px) {
+  .player-controls {
+    gap: var(--spacing-md);
+  }
+
+  .control-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .play-pause {
+    width: 52px;
+    height: 52px;
+  }
+
+  .control-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .segment-tabs {
+    padding: var(--spacing-sm) 0;
+  }
+
+  .segment-tab {
+    width: 32px;
+    height: 32px;
+    font-size: var(--font-size-xs);
+  }
+}
+
+@media (max-width: 480px) {
+  .player-controls {
+    gap: var(--spacing-md);
+  }
+
+  .control-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .play-pause {
+    width: 48px;
+    height: 48px;
+  }
+
+  .skip-back,
+  .skip-forward {
+    display: none;
+  }
+}
+
+/* Accessibility */
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-bar,
+  .control-btn,
+  .segment-tab {
+    transition: none;
+  }
+}

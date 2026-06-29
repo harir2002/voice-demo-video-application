@@ -1,0 +1,252 @@
+/**
+ * Orb Component Styles
+ */
+
+.orb-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.orb-wrapper {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Main orb core */
+.orb-core {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--border-radius-full);
+  background: radial-gradient(circle at 30% 30%, rgba(0, 102, 255, 0.3), rgba(0, 0, 0, 0.8));
+  box-shadow: 
+    0 0 40px rgba(0, 102, 255, 0.3),
+    inset 0 0 40px rgba(255, 255, 255, 0.1);
+}
+
+.orb-inner {
+  position: absolute;
+  inset: 2px;
+  border-radius: var(--border-radius-full);
+  background: radial-gradient(circle at 40% 40%, rgba(100, 150, 255, 0.2), rgba(0, 0, 0, 0.9));
+}
+
+/* Outer ring */
+.orb-ring {
+  position: absolute;
+  inset: -8px;
+  border-radius: var(--border-radius-full);
+  border: 2px solid rgba(0, 102, 255, 0.2);
+  animation: ringRotate 4s linear infinite;
+}
+
+@keyframes ringRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Idle state - subtle pulse */
+.orb-idle .orb-core {
+  animation: orbPulse 2s ease-in-out infinite;
+}
+
+@keyframes orbPulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 40px rgba(0, 102, 255, 0.3),
+      inset 0 0 40px rgba(255, 255, 255, 0.1);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 
+      0 0 50px rgba(0, 102, 255, 0.4),
+      inset 0 0 50px rgba(255, 255, 255, 0.15);
+    transform: scale(1.05);
+  }
+}
+
+/* Processing state - spinning */
+.orb-processing .orb-core {
+  animation: orbSpin 2s linear infinite;
+}
+
+@keyframes orbSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Spinner indicator for processing */
+.orb-spinner {
+  position: absolute;
+  inset: -20px;
+  border: 3px solid transparent;
+  border-top: 3px solid rgba(0, 102, 255, 0.6);
+  border-right: 3px solid rgba(0, 102, 255, 0.3);
+  border-radius: var(--border-radius-full);
+  animation: spinnerRotate 2s linear infinite;
+}
+
+@keyframes spinnerRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Speaking/Playing state - ripple effects */
+.orb-ripple {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--border-radius-full);
+  border: 2px solid rgba(0, 102, 255, 0.5);
+  animation: rippleEffect 1s ease-out infinite;
+}
+
+.ripple-1 {
+  animation-delay: 0s;
+}
+
+.ripple-2 {
+  animation-delay: 0.35s;
+}
+
+.ripple-3 {
+  animation-delay: 0.7s;
+}
+
+@keyframes rippleEffect {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+/* Pulse indicator for idle */
+.orb-pulse {
+  position: absolute;
+  inset: 20px;
+  border-radius: var(--border-radius-full);
+  background: radial-gradient(circle, rgba(0, 102, 255, 0.4), transparent);
+  animation: pulseEffect 2s ease-in-out infinite;
+}
+
+@keyframes pulseEffect {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+}
+
+/* Checkmark for complete state */
+.orb-checkmark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-success);
+  font-size: 60px;
+  animation: checkmarkAppear var(--transition-normal) ease-out;
+}
+
+@keyframes checkmarkAppear {
+  from {
+    transform: scale(0) rotate(-45deg);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.orb-checkmark svg {
+  width: 100%;
+  height: 100%;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Status text */
+.orb-status {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-light);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  animation: fadeIn var(--transition-normal);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* State-specific styling */
+.orb-complete .orb-core {
+  animation: none;
+  background: radial-gradient(circle at 30% 30%, rgba(34, 197, 94, 0.3), rgba(0, 0, 0, 0.8));
+  box-shadow: 
+    0 0 40px rgba(34, 197, 94, 0.3),
+    inset 0 0 40px rgba(255, 255, 255, 0.1);
+}
+
+.orb-complete .orb-ring {
+  border-color: rgba(34, 197, 94, 0.2);
+  animation: none;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .orb-core {
+    background: radial-gradient(circle at 30% 30%, rgba(0, 102, 255, 0.4), rgba(20, 20, 20, 0.9));
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .orb-core,
+  .orb-inner,
+  .orb-ring,
+  .orb-spinner,
+  .orb-ripple,
+  .orb-pulse,
+  .orb-status,
+  .orb-checkmark {
+    animation: none !important;
+  }
+
+  .orb-core {
+    box-shadow: 
+      0 0 30px rgba(0, 102, 255, 0.2),
+      inset 0 0 30px rgba(255, 255, 255, 0.1);
+  }
+}
