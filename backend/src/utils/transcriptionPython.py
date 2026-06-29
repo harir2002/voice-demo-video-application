@@ -29,10 +29,19 @@ except ImportError:
     PYDUB_AVAILABLE = False
 
 
-def transcribe_with_sarvam(audio_path: str, api_key: str) -> dict:
+def transcribe_with_sarvam(audio_path: str, api_key: str, language: str = "hi") -> dict:
     """
     Transcribe audio using Sarvam AI API
+    BEST FOR: Hinglish (Hindi + English), Indian accents
+    
     Supports: MP3, WAV, M4A, OGG, WEBM
+    Languages: hi (Hindi), en (English), ta, te, ml, kn, and 10+ more
+    Code-mixing: Automatically detects and preserves Hindi-English mixing
+    
+    Args:
+        audio_path: Path to audio file
+        api_key: Sarvam API key
+        language: Language code ('hi' for Hindi, 'en' for English)
     """
     if not SARVAM_AVAILABLE:
         raise Exception("Sarvam SDK not installed. Install with: pip install sarvam-ai")
@@ -47,17 +56,23 @@ def transcribe_with_sarvam(audio_path: str, api_key: str) -> dict:
         # Open audio file
         with open(audio_path, 'rb') as audio_file:
             # Call Sarvam transcription API
+            # For Hinglish: language='hi' will auto-detect code-mixing
             response = client.transcribe(
                 audio=audio_file,
-                language="en"  # Supports: en, hi, ta, te, ml, kn
+                language=language,  # 'hi' for Hinglish (auto-detects English)
+                detect_language=True,  # Auto-detect code-mixing
+                timestamps=True  # Get word-level timestamps
             )
         
         return {
             "success": True,
             "transcript": response.get("transcript", ""),
-            "language": response.get("language", "en"),
+            "language": response.get("language", language),
+            "detected_languages": response.get("detected_languages", []),  # [Hindi, English]
             "confidence": response.get("confidence"),
-            "duration": response.get("duration")
+            "duration": response.get("duration"),
+            "segments": response.get("segments", []),  # Word-level segments
+            "has_code_mixing": response.get("has_code_mixing", False)
         }
     
     except Exception as e:
@@ -127,19 +142,26 @@ def convert_audio_format(input_path: str, output_path: str, output_format: str =
 def main():
     """
     Main function - called from Node.js backend
-    Arguments: audio_path api_key [service]
+    Arguments: audio_path api_key [service] [language]
+    
     service: 'sarvam' or 'openai' (default: sarvam, fallback: openai)
+    language: 'hi' for Hindi/Hinglish, 'en' for English (default: 'hi')
+    
+    Examples:
+        python transcriptionPython.py audio.mp3 api_key sarvam hi
+        python transcriptionPython.py audio.mp3 api_key openai en
     """
     if len(sys.argv) < 3:
         print(json.dumps({
             "success": False,
-            "error": "Missing arguments: audio_path api_key [service]"
+            "error": "Missing arguments: audio_path api_key [service] [language]"
         }))
         sys.exit(1)
     
     audio_path = sys.argv[1]
     api_key = sys.argv[2]
     service = sys.argv[3] if len(sys.argv) > 3 else "sarvam"
+    language = sys.argv[4] if len(sys.argv) > 4 else "hi"  # Default to Hindi for Hinglish
     
     # Validate audio file exists
     if not Path(audio_path).exists():
@@ -154,7 +176,7 @@ def main():
     
     if service == "sarvam":
         if SARVAM_AVAILABLE:
-            result = transcribe_with_sarvam(audio_path, api_key)
+            result = transcribe_with_sarvam(audio_path, api_key, language=language)
         elif OPENAI_AVAILABLE:
             print(f"Warning: Sarvam not available, falling back to OpenAI", file=sys.stderr)
             result = transcribe_with_openai(audio_path, api_key)
@@ -169,7 +191,7 @@ def main():
             result = transcribe_with_openai(audio_path, api_key)
         elif SARVAM_AVAILABLE:
             print(f"Warning: OpenAI not available, falling back to Sarvam", file=sys.stderr)
-            result = transcribe_with_sarvam(audio_path, api_key)
+            result = transcribe_with_sarvam(audio_path, api_key, language=language)
         else:
             result = {
                 "success": False,
