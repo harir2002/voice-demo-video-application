@@ -6,8 +6,10 @@
     "name": "Voice AI Platform",
     "color": "#0066FF"
   },
+  "__comment__": "This conversation JSON demonstrates multi-segment sequential playback. Replace audioFile paths with your actual audio files. Timestamps are optional and used for progressive transcript rendering.",
   "segments": [
     {
+      "__comment__": "SEGMENT STRUCTURE:\n- speaker: 'customer' or 'ai'\n- audioFile: Path to audio (relative or absolute). Can be ./audio/file.mp3 or https://example.com/audio.mp3\n- transcript: Text spoken in this segment. Used for display and (optionally) transcription sync\n- duration: Length of audio in seconds. Used as fallback if audio file not found\n- timestamps: Optional array showing when each word is spoken. Helps sync transcript highlighting\n- emotion: Optional sentiment (neutral, happy, helpful, positive, etc.) for future UI enhancements\n- features: Optional array of feature markers to highlight at this segment\n- delayAfter: Optional pause (in seconds) before playing next segment. Adds realism to conversation\n- id: Unique identifier for this segment (used internally)\n",
       "id": "seg-customer-1",
       "speaker": "customer",
       "audioFile": "./audio/customer-segment-1.mp3",
@@ -53,6 +55,7 @@
       ],
       "features": [
         {
+          "__comment__": "FEATURE MARKERS: Optional capabilities to highlight. Supported types: response-time, faq-handling, multiturn-navigational, context-window, human-handoff, indian-accents, language, accent, interrupt, etc.",
           "marker": "response-time",
           "label": "Quick Response",
           "description": "AI responded in under 1 second"
@@ -167,6 +170,7 @@
     }
   ],
   "summaryCard": {
+    "__comment__": "END-OF-CALL SUMMARY: Optional handoff panel shown when conversation ends. Remove entire 'summaryCard' section if not needed.",
     "customerName": "John Smith",
     "language": "English",
     "primaryQuery": "Check Account Balance",
@@ -190,6 +194,7 @@
     }
   },
   "settings": {
+    "__comment__": "PLAYBACK SETTINGS: Control UI behavior during demo recording. recordingMode optimizes UI for screen capture.",
     "autoPlay": true,
     "showTranscript": true,
     "showFeatures": true,

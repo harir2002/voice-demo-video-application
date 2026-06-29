@@ -2,6 +2,20 @@
  * ConversationLoader Component
  * 
  * Handles loading conversation JSON files from upload or URL
+ * 
+ * Features:
+ * - File upload with validation (size, format, integrity)
+ * - URL loading with CORS support
+ * - Comprehensive error messages
+ * - Two UI modes: compact and large (for empty state)
+ * - Accessible with proper ARIA labels
+ * 
+ * Error Handling:
+ * - File size validation (max 5MB)
+ * - File type validation (.json only)
+ * - Empty file detection
+ * - URL format validation
+ * - All errors displayed to user with actionable messages
  */
 
 import React, { useRef, useState } from 'react';
@@ -21,14 +35,25 @@ function ConversationLoader({
   const handleFileSelect = (file) => {
     setError(null);
 
+    // Validate file exists
+    if (!file) {
+      setError('No file selected');
+      return;
+    }
+
     // Validate JSON file
     if (!file.name.endsWith('.json')) {
-      setError('Please select a JSON file');
+      setError('Only .json files are supported. Please select a conversation.json file.');
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setError('File too large (max 5MB)');
+      setError('File too large. Maximum size is 5MB.');
+      return;
+    }
+
+    if (file.size === 0) {
+      setError('File is empty. Please select a valid conversation file.');
       return;
     }
 
@@ -48,13 +73,29 @@ function ConversationLoader({
   };
 
   const handleUrlSubmit = () => {
-    if (!urlInput.trim()) {
+    const trimmedUrl = (urlInput || '').trim();
+
+    if (!trimmedUrl) {
       setError('Please enter a URL');
       return;
     }
 
+    // Basic URL validation
+    try {
+      new URL(trimmedUrl);
+    } catch (e) {
+      setError('Invalid URL format. Please check and try again.');
+      return;
+    }
+
+    // Warn about file type
+    if (!trimmedUrl.includes('.json')) {
+      setError('URL should point to a .json file');
+      return;
+    }
+
     setError(null);
-    onUrlLoad(urlInput.trim());
+    onUrlLoad(trimmedUrl);
     setUrlInput('');
     setShowUrlInput(false);
   };

@@ -6,8 +6,10 @@
     "name": "Godrej Finance",
     "color": "#1F3A70"
   },
+  "__comment__": "Multi-language conversation demo showing Hindi-English code-mixing. All fields are editable. Replace audio paths with real customer and AI recordings.",
   "segments": [
     {
+      "__comment__": "EDITING GUIDE:\n1. 'speaker': Use 'customer' for user voice or 'ai' for system/agent voice\n2. 'audioFile': Replace with path to your audio file. Local: ./audio/file.mp3 or Remote: https://example.com/file.mp3\n3. 'transcript': Exact text spoken (used for display and timing reference)\n4. 'duration': Seconds of audio. Only used if audioFile is unreachable\n5. 'timestamps': When each word starts (optional, for word-by-word highlighting)\n6. 'features': Array of capability markers to showcase at this segment\n7. 'emotion': Optional sentiment tag for future use\n8. 'delayAfter': Pause before next segment (in seconds) for natural conversation rhythm\n",
       "id": "godrej-seg-1",
       "speaker": "customer",
       "audioFile": "./audio/godrej/customer-inquiry.mp3",
@@ -264,6 +266,7 @@
     }
   ],
   "summaryCard": {
+    "__comment__": "HANDOFF PANEL: Shown at conversation end. Shows customer info, query summary, and journey breadcrumb. Remove entire section if not needed. All fields are optional.",
     "customerName": "Rajesh Kumar",
     "language": "Hindi with English Mix",
     "primaryQuery": "Home Loan Eligibility Check",

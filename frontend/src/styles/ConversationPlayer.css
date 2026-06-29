@@ -1,5 +1,8 @@
 /**
  * ConversationPlayer Component Styles
+ * 
+ * Premium playback controls with cinematic animations
+ * Optimized for screen recording and desktop demo mode
  */
 
 .conversation-player {
@@ -7,6 +10,80 @@
   flex-direction: column;
   gap: var(--spacing-lg);
   width: 100%;
+}
+
+/* Error message */
+.player-error {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05));
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--border-radius-md);
+  color: #DC2626;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  animation: slideDown 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  will-change: transform;
+}
+
+.error-icon {
+  flex-shrink: 0;
+  font-size: 18px;
+}
+
+.error-text {
+  flex: 1;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Loading indicator */
+.player-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: rgba(0, 102, 255, 0.05);
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-lighter);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(0, 102, 255, 0.2);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* Segment tabs */
@@ -20,6 +97,7 @@
   border-top: 1px solid var(--color-border);
   border-bottom: 1px solid var(--color-border);
   overflow-x: auto;
+  scroll-behavior: smooth;
 }
 
 .tabs-container {
@@ -30,11 +108,11 @@
 }
 
 .segment-tab {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border: 2px solid var(--color-border);
   border-radius: var(--border-radius-full);
-  background: transparent;
+  background: white;
   color: var(--color-text-lighter);
   font-size: var(--font-size-xs);
   font-weight: 600;
@@ -43,17 +121,35 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  flex-shrink: 0;
 }
 
 .segment-tab:hover:not(:disabled) {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: rgba(0, 102, 255, 0.05);
+  transform: scale(1.05);
 }
 
 .segment-tab.active {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
   color: white;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0, 102, 255, 0.3);
+  animation: tabActivate 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes tabActivate {
+  from {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .segment-tab:disabled {
@@ -63,38 +159,48 @@
 
 .tab-number {
   display: inline-block;
+  font-weight: 700;
 }
 
 /* Progress bar */
 
 .player-progress {
   width: 100%;
-  height: 6px;
+  height: 8px;
   background: var(--color-border);
-  border-radius: 3px;
+  border-radius: 4px;
   cursor: pointer;
   overflow: hidden;
+  transition: height var(--transition-fast);
+  position: relative;
+}
+
+.player-progress:hover {
+  height: 10px;
 }
 
 .progress-bar {
   height: 100%;
-  background: var(--color-primary);
-  border-radius: 3px;
+  background: linear-gradient(90deg, var(--color-accent), rgba(0, 102, 255, 0.8));
+  border-radius: 4px;
   position: relative;
   transition: width 0.1s linear;
+  box-shadow: 0 0 12px rgba(0, 102, 255, 0.4);
 }
 
 .progress-handle {
   position: absolute;
-  right: -6px;
-  top: -5px;
-  width: 16px;
-  height: 16px;
-  background: var(--color-primary);
+  right: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  background: white;
   border-radius: var(--border-radius-full);
-  box-shadow: 0 2px 6px rgba(0, 102, 255, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 102, 255, 0.4);
   opacity: 0;
   transition: opacity var(--transition-fast);
+  will-change: opacity;
 }
 
 .player-progress:hover .progress-handle {
@@ -108,7 +214,8 @@
   justify-content: space-between;
   font-size: var(--font-size-xs);
   color: var(--color-text-lighter);
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
 .current-time {
@@ -125,32 +232,36 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-2xl);
+  padding: var(--spacing-md) 0;
 }
 
 .control-btn {
-  width: 48px;
-  height: 48px;
+  width: 50px;
+  height: 50px;
   border: 2px solid var(--color-border);
   border-radius: var(--border-radius-full);
   background: white;
-  color: var(--color-primary);
+  color: var(--color-text);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all var(--transition-fast);
   padding: 0;
+  font-weight: 600;
+  will-change: transform;
 }
 
 .control-btn:hover:not(:disabled) {
-  background: rgba(0, 102, 255, 0.1);
-  border-color: var(--color-primary);
-  transform: scale(1.05);
+  background: rgba(0, 102, 255, 0.08);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  transform: scale(1.08);
 }
 
 .control-btn:active:not(:disabled) {
-  transform: scale(0.95);
+  transform: scale(0.96);
 }
 
 .control-btn:disabled {
@@ -161,19 +272,28 @@
 .control-btn svg {
   width: 24px;
   height: 24px;
+  stroke-width: 1.5;
 }
 
 .play-pause {
-  width: 56px;
-  height: 56px;
-  border-color: var(--color-primary);
-  background: var(--color-primary);
+  width: 60px;
+  height: 60px;
+  border-color: var(--color-accent);
+  background: var(--color-accent);
   color: white;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(0, 102, 255, 0.3);
 }
 
 .play-pause:hover:not(:disabled) {
   background: #0052CC;
   border-color: #0052CC;
+  box-shadow: 0 6px 20px rgba(0, 102, 255, 0.4);
+  transform: scale(1.12);
+}
+
+.play-pause:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .skip-back,
@@ -183,29 +303,29 @@
 
 .skip-back:hover:not(:disabled),
 .skip-forward:hover:not(:disabled) {
-  color: var(--color-primary);
+  color: var(--color-accent);
 }
 
 /* Responsive */
 
 @media (max-width: 768px) {
   .player-controls {
-    gap: var(--spacing-md);
+    gap: var(--spacing-lg);
   }
 
   .control-btn {
-    width: 44px;
-    height: 44px;
+    width: 46px;
+    height: 46px;
   }
 
   .play-pause {
-    width: 52px;
-    height: 52px;
+    width: 56px;
+    height: 56px;
   }
 
   .control-btn svg {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
   }
 
   .segment-tabs {
@@ -213,9 +333,17 @@
   }
 
   .segment-tab {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     font-size: var(--font-size-xs);
+  }
+
+  .player-progress {
+    height: 6px;
+  }
+
+  .player-progress:hover {
+    height: 8px;
   }
 }
 
@@ -225,18 +353,24 @@
   }
 
   .control-btn {
-    width: 40px;
-    height: 40px;
+    width: 42px;
+    height: 42px;
   }
 
   .play-pause {
-    width: 48px;
-    height: 48px;
+    width: 52px;
+    height: 52px;
   }
 
   .skip-back,
   .skip-forward {
     display: none;
+  }
+
+  .segment-tab {
+    width: 32px;
+    height: 32px;
+    font-size: var(--font-size-xs);
   }
 }
 
@@ -245,7 +379,50 @@
 @media (prefers-reduced-motion: reduce) {
   .progress-bar,
   .control-btn,
-  .segment-tab {
+  .segment-tab,
+  .player-error,
+  .player-loading {
     transition: none;
+    animation: none;
+  }
+
+  .segment-tab.active {
+    animation: none;
+  }
+
+  .player-progress:hover {
+    height: 8px;
+  }
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .control-btn {
+    background: var(--color-bg-secondary);
+    color: var(--color-text);
+    border-color: var(--color-border);
+  }
+
+  .control-btn:hover:not(:disabled) {
+    background: rgba(0, 102, 255, 0.15);
+  }
+
+  .player-error {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.08));
+    border-color: rgba(239, 68, 68, 0.4);
+  }
+
+  .player-loading {
+    background: rgba(0, 102, 255, 0.1);
+  }
+}
+
+/* Print */
+@media print {
+  .player-controls,
+  .segment-tabs,
+  .player-error,
+  .player-loading {
+    display: none;
   }
 }

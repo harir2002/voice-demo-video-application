@@ -1,7 +1,7 @@
 /**
  * SummaryCard Component
  * 
- * Displays end-of-demo summary information
+ * Displays end-of-demo summary information as enterprise handoff panel
  */
 
 import React, { useEffect, useState } from 'react';
@@ -25,6 +25,9 @@ function SummaryCard({ data = null, isVisible = false, onClose }) {
     return null;
   }
 
+  // Build breadcrumb from journey or context
+  const breadcrumb = data.journey || [];
+
   return (
     <div className={`summary-card-overlay ${isAnimatingIn ? 'visible' : ''}`}>
       <div className={`summary-card ${isAnimatingIn ? 'slide-in' : ''}`}>
@@ -40,6 +43,9 @@ function SummaryCard({ data = null, isVisible = false, onClose }) {
           </svg>
         </button>
 
+        {/* Decorative top bar */}
+        <div className="summary-accent-bar" />
+
         {/* Header */}
         <div className="summary-header">
           <h2 className="summary-title">{data.title || 'Demo Complete'}</h2>
@@ -48,8 +54,8 @@ function SummaryCard({ data = null, isVisible = false, onClose }) {
           )}
         </div>
 
-        {/* Fields */}
-        {data.fields && Array.isArray(data.fields) && (
+        {/* Primary fields grid */}
+        {data.fields && Array.isArray(data.fields) && data.fields.length > 0 && (
           <div className="summary-fields">
             {data.fields.map((field, index) => (
               <div key={index} className="summary-field">
@@ -60,24 +66,57 @@ function SummaryCard({ data = null, isVisible = false, onClose }) {
           </div>
         )}
 
-        {/* Description */}
+        {/* Breadcrumb journey */}
+        {breadcrumb && breadcrumb.length > 0 && (
+          <div className="summary-breadcrumb">
+            <div className="breadcrumb-label">Journey</div>
+            <div className="breadcrumb-items">
+              {breadcrumb.map((item, index) => (
+                <div key={index} className="breadcrumb-item">
+                  <span className="breadcrumb-text">{item}</span>
+                  {index < breadcrumb.length - 1 && (
+                    <span className="breadcrumb-divider">→</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Description / context captured */}
         {data.description && (
-          <p className="summary-description">{data.description}</p>
+          <div className="summary-description">
+            <p>{data.description}</p>
+          </div>
         )}
 
-        {/* Action button */}
-        {data.actionLabel && (
-          <button className="summary-action" onClick={onClose}>
-            {data.actionLabel}
+        {/* Escalation reason if present */}
+        {data.escalationReason && (
+          <div className="summary-escalation">
+            <span className="escalation-label">Escalation Reason</span>
+            <span className="escalation-text">{data.escalationReason}</span>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div className="summary-actions">
+          {data.actionLabel && (
+            <button className="summary-action primary" onClick={onClose}>
+              {data.actionLabel}
+            </button>
+          )}
+          <button className="summary-action secondary" onClick={onClose}>
+            Close
           </button>
-        )}
+        </div>
 
-        {/* Decorative element */}
+        {/* Decorative background elements */}
         <div className="summary-decoration">
-          <svg viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.1">
-            <circle cx="50" cy="50" r="45" />
-            <circle cx="50" cy="50" r="35" />
-            <circle cx="50" cy="50" r="25" />
+          <svg viewBox="0 0 200 200" fill="none" stroke="currentColor" strokeWidth="0.5" opacity="0.08">
+            <circle cx="100" cy="100" r="90" />
+            <circle cx="100" cy="100" r="70" />
+            <circle cx="100" cy="100" r="50" />
+            <circle cx="100" cy="100" r="30" />
           </svg>
         </div>
       </div>

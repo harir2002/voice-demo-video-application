@@ -3,6 +3,7 @@
  * 
  * Handles sequential playback of multiple audio segments
  * Manages inter-segment delays and transitions
+ * Includes robust error handling for missing audio and network failures
  */
 
 import React, { useRef, useEffect, useState, forwardRef } from 'react';
@@ -22,41 +23,140 @@ const ConversationPlayer = forwardRef(({
   const audioRef = useRef(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [audioError, setAudioError] = useState(null);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  const playbackTimeoutRef = useRef(null);
 
-  // Handle play/pause
+  // Cleanup playback timeout on unmount or segment change
   useEffect(() => {
-    if (!audioRef.current || !segment?.audioFile) return;
+    return () => {
+      if (playbackTimeoutRef.current) {
+        clearTimeout(playbackTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Handle play/pause with error recovery
+  useEffect(() => {
+    if (!audioRef.current) return;
+
+    // If no segment or no audio file, cannot play
+    if (!segment?.audioFile) {
+      audioRef.current.pause();
+      return;
+    }
 
     if (isPlaying) {
-      // Check if audio file exists
-      audioRef.current
-        .play()
-        .catch(err => {
-          console.error('Playback error:', err);
-          // If audio fails, try to skip to next segment
-          if (onSegmentEnd) {
-            onSegmentEnd();
-          }
-        });
+      // Clear any previous playback errors
+      setAudioError(null);
+
+      // Try to play the audio
+      const playPromise = audioRef.current.play();
+      
+      if (playPromise !== undefined) {
+        playPromise
+          .catch(err => {
+            // Handle playback errors gracefully
+            console.error('Playback error:', err.name, err.message);
+            
+            // Specific error handling
+            if (err.name === 'NotAllowedError') {
+              // Browser blocked autoplay or similar
+              setAudioError('Playback blocked by browser. Please click play to start.');
+            } else if (err.name === 'NotSupportedError') {
+              // Audio format not supported
+              setAudioError('Audio format not supported by this browser.');
+            } else if (err.name === 'AbortError') {
+              // Playback was aborted
+              console.warn('Playback aborted');
+            } else {
+              // Unknown error - try to skip to next segment
+              setAudioError('Audio playback failed. Proceeding to next segment...');
+              
+              // Small delay before skipping to allow user to see error
+              playbackTimeoutRef.current = setTimeout(() => {
+                if (onSegmentEnd) {
+                  onSegmentEnd();
+                }
+              }, 1000);
+            }
+          });
+      }
     } else {
       audioRef.current.pause();
     }
-  }, [isPlaying, segment]);
+
+    // Cleanup
+    return () => {
+      if (playbackTimeoutRef.current) {
+        clearTimeout(playbackTimeoutRef.current);
+      }
+    };
+  }, [isPlaying, segment, onSegmentEnd]);
 
   // Update when segment changes
   useEffect(() => {
-    if (audioRef.current && segment?.audioFile) {
-      audioRef.current.src = segment.audioFile;
-      setCurrentTime(0);
+    if (!audioRef.current || !segment?.audioFile) {
       setDuration(0);
+      setCurrentTime(0);
+      return;
     }
+
+    // Clear previous error when new segment loads
+    setAudioError(null);
+    setIsLoadingAudio(true);
+    audioRef.current.src = segment.audioFile;
+    setCurrentTime(0);
+    setDuration(0);
   }, [segment?.audioFile]);
 
   const handleLoadedMetadata = () => {
     if (audioRef.current) {
       const dur = audioRef.current.duration;
       setDuration(dur);
+      setIsLoadingAudio(false);
+      
+      // Clear error once audio successfully loads
+      if (dur > 0) {
+        setAudioError(null);
+      }
     }
+  };
+
+  const handleLoadError = (e) => {
+    // Audio failed to load
+    const audioElement = audioRef.current;
+    let errorMsg = 'Failed to load audio file';
+    
+    if (audioElement?.error) {
+      switch (audioElement.error.code) {
+        case audioElement.error.MEDIA_ERR_ABORTED:
+          errorMsg = 'Audio loading was aborted';
+          break;
+        case audioElement.error.MEDIA_ERR_NETWORK:
+          errorMsg = 'Network error loading audio';
+          break;
+        case audioElement.error.MEDIA_ERR_DECODE:
+          errorMsg = 'Audio format cannot be decoded';
+          break;
+        case audioElement.error.MEDIA_ERR_SRC_NOT_SUPPORTED:
+          errorMsg = 'Audio source not supported';
+          break;
+        default:
+          errorMsg = 'Audio loading error';
+      }
+    }
+    
+    console.error('Audio error:', errorMsg);
+    setAudioError(errorMsg);
+    setIsLoadingAudio(false);
+    
+    // Try to skip to next segment after showing error briefly
+    playbackTimeoutRef.current = setTimeout(() => {
+      if (onSegmentEnd) {
+        onSegmentEnd();
+      }
+    }, 1500);
   };
 
   const handleTimeUpdate = () => {
@@ -68,6 +168,7 @@ const ConversationPlayer = forwardRef(({
   };
 
   const handleEnded = () => {
+    setIsLoadingAudio(false);
     onSegmentEnd?.();
   };
 
@@ -117,8 +218,25 @@ const ConversationPlayer = forwardRef(({
         onLoadedMetadata={handleLoadedMetadata}
         onTimeUpdate={handleTimeUpdate}
         onEnded={handleEnded}
+        onError={handleLoadError}
         crossOrigin="anonymous"
       />
+
+      {/* Error message */}
+      {audioError && (
+        <div className="player-error" role="alert">
+          <span className="error-icon">⚠️</span>
+          <span className="error-text">{audioError}</span>
+        </div>
+      )}
+
+      {/* Loading indicator */}
+      {isLoadingAudio && (
+        <div className="player-loading">
+          <div className="loading-spinner" />
+          <span>Loading audio...</span>
+        </div>
+      )}
 
       {/* Segment thumbnails/tabs */}
       <div className="segment-tabs">
@@ -130,6 +248,7 @@ const ConversationPlayer = forwardRef(({
                 className={`segment-tab ${idx === currentSegmentIndex ? 'active' : ''}`}
                 onClick={() => goToSegment(idx)}
                 title={`Segment ${idx + 1}`}
+                disabled={idx === currentSegmentIndex && isPlaying}
               >
                 <span className="tab-number">{idx + 1}</span>
               </button>
@@ -164,7 +283,7 @@ const ConversationPlayer = forwardRef(({
         <button
           className="control-btn skip-back"
           onClick={() => handleSkip(-1)}
-          disabled={!segment}
+          disabled={!segment || audioError !== null}
           title="Rewind 5s"
           aria-label="Rewind 5 seconds"
         >
@@ -176,7 +295,7 @@ const ConversationPlayer = forwardRef(({
         <button
           className="control-btn play-pause"
           onClick={togglePlayPause}
-          disabled={!segment}
+          disabled={!segment || audioError !== null}
           title={isPlaying ? 'Pause' : 'Play'}
           aria-label={isPlaying ? 'Pause' : 'Play'}
         >
@@ -195,7 +314,7 @@ const ConversationPlayer = forwardRef(({
         <button
           className="control-btn skip-forward"
           onClick={() => handleSkip(1)}
-          disabled={!segment}
+          disabled={!segment || audioError !== null}
           title="Forward 5s"
           aria-label="Forward 5 seconds"
         >

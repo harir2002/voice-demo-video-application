@@ -112,33 +112,60 @@ function App() {
     setOrbState('speaking');
   };
 
-  // Handle segment end
-  const handleSegmentEnd = () => {
-    if (conversation && currentSegmentIndex < conversation.segments.length - 1) {
+  // Handle segment end with improved reliability
+  const handleSegmentEnd = useCallback(() => {
+    if (!conversation || !conversation.segments) {
+      console.warn('Segment end: No conversation or segments available');
+      return;
+    }
+
+    const isLastSegment = currentSegmentIndex >= conversation.segments.length - 1;
+
+    if (!isLastSegment) {
       // Move to next segment
       const nextIndex = currentSegmentIndex + 1;
       const nextSegment = conversation.segments[nextIndex];
-      
-      // Apply delay if specified
-      if (nextSegment.delayAfter) {
-        setTimeout(() => {
-          handleSegmentChange(nextIndex);
-          setIsPlaying(true);
-        }, nextSegment.delayAfter * 1000);
-      } else {
-        handleSegmentChange(nextIndex);
-        setIsPlaying(true);
+
+      if (!nextSegment) {
+        console.error(`Segment end: Next segment at index ${nextIndex} not found`);
+        return;
       }
+
+      // Calculate delay - use segment's delayAfter or default smooth transition
+      // delayAfter is in seconds, convert to milliseconds
+      const delayMs = nextSegment.delayAfter 
+        ? Math.max(Math.round(nextSegment.delayAfter * 1000), 100)
+        : 300; // Default smooth transition delay
+
+      // Set a timeout but store reference for potential cleanup
+      const timeoutId = setTimeout(() => {
+        setCurrentSegmentIndex(nextIndex);
+        setCurrentTime(0);
+        setIsPlaying(true);
+      }, delayMs);
+
+      // Return cleanup function if needed (e.g., on unmount)
+      return () => {
+        clearTimeout(timeoutId);
+      };
     } else {
-      // End of conversation
+      // End of conversation reached
       setIsPlaying(false);
       setOrbState('complete');
-      
+
+      // Show summary card if configured
       if (conversation?.summaryCard) {
-        setShowSummary(true);
+        // Delay summary card appearance for cinematic effect (800ms)
+        const summaryTimeoutId = setTimeout(() => {
+          setShowSummary(true);
+        }, 800);
+
+        return () => {
+          clearTimeout(summaryTimeoutId);
+        };
       }
     }
-  };
+  }, [conversation, currentSegmentIndex]);
 
   // Handle restart
   const handleRestart = () => {
@@ -282,8 +309,13 @@ function App() {
             </div>
 
             {/* Feature markers overlay */}
-            {visibleFeatures.length > 0 && (
-              <FeatureMarker features={visibleFeatures} />
+            {currentSegment && (
+              <FeatureMarker 
+                features={visibleFeatures}
+                currentTime={currentTime}
+                currentSegmentIndex={currentSegmentIndex}
+                segment={currentSegment}
+              />
             )}
 
             {/* Bottom section: Player controls */}
