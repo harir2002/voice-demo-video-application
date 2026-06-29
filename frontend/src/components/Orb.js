@@ -7,7 +7,7 @@
  * - speaking: wave/ripple effects
  */
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import '../styles/Orb.css';
 
 function Orb({ state = 'idle', isPlaying = false }) {

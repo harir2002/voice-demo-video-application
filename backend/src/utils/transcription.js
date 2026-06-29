@@ -7,23 +7,122 @@
 
 const fs = require('fs');
 const path = require('path');
+const { spawn } = require('child_process');
 const OpenAI = require('openai');
 
-if (!process.env.OPENAI_API_KEY) {
-  throw new Error('OPENAI_API_KEY environment variable is required');
+// Initialize OpenAI if API key is available
+let openai = null;
+if (process.env.OPENAI_API_KEY) {
+  openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+  });
+} else {
+  console.warn('⚠️  OPENAI_API_KEY not set. Will try Python transcription service.');
 }
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+/**
+ * Transcribe using Python service (Sarvam or OpenAI)
+ * 
+ * @param {string} filePath - Path to audio file
+ * @param {Object} options - Options
+ * @returns {Promise<Object>} Transcription result
+ */
+async function transcribeWithPython(filePath, options = {}) {
+  return new Promise((resolve, reject) => {
+    const pythonScript = path.join(__dirname, 'transcriptionPython.py');
+    const service = options.service || 'sarvam'; // 'sarvam' or 'openai'
+    const apiKey = options.apiKey || 
+      (service === 'sarvam' ? process.env.SARVAM_API_KEY : process.env.OPENAI_API_KEY);
+
+    if (!apiKey) {
+      return reject(new Error(`${service.toUpperCase()}_API_KEY environment variable is required`));
+    }
+
+    console.log(`🐍 Calling Python transcription service (${service})...`);
+
+    const python = spawn('python3', [pythonScript, filePath, apiKey, service]);
+    let output = '';
+    let errorOutput = '';
+
+    python.stdout.on('data', (data) => {
+      output += data.toString();
+    });
+
+    python.stderr.on('data', (data) => {
+      errorOutput += data.toString();
+    });
+
+    python.on('close', (code) => {
+      if (code !== 0) {
+        console.error('❌ Python error:', errorOutput);
+        return reject(new Error(`Python transcription failed: ${errorOutput}`));
+      }
+
+      try {
+        const result = JSON.parse(output);
+        
+        if (!result.success) {
+          return reject(new Error(result.error || 'Transcription failed'));
+        }
+
+        // Transform to standard format
+        const transcript = result.transcript;
+        const segments = transformTranscriptToSegments(transcript);
+
+        resolve({
+          transcript,
+          segments,
+          duration: result.duration || calculateDuration(segments),
+          language: result.language || 'en',
+          provider: service,
+          confidence: result.confidence
+        });
+      } catch (e) {
+        reject(new Error(`Failed to parse Python output: ${e.message}`));
+      }
+    });
+  });
+}
 
 /**
- * Transcribe an audio file using OpenAI Whisper
+ * Transform transcript text into segments
  * 
- * @param {string} filePath - Path to the audio file
- * @param {Object} options - Transcription options
- * @returns {Promise<Object>} Transcription result with segments and timestamps
+ * @param {string} transcript - Full transcript text
+ * @returns {Array<Object>} Array of segments
  */
+function transformTranscriptToSegments(transcript) {
+  if (!transcript) return [];
+
+  // Split into sentences
+  const sentences = transcript.match(/[^.!?]+[.!?]+/g) || [transcript];
+  
+  let currentTime = 0;
+  const segments = [];
+
+  for (const sentence of sentences) {
+    const text = sentence.trim();
+    if (!text) continue;
+
+    // Estimate segment duration (average speaking rate: 150 words/min = 2.5 words/sec)
+    const wordCount = text.split(/\s+/).length;
+    const duration = Math.max(1.0, wordCount / 2.5);
+
+    segments.push({
+      text,
+      start: currentTime,
+      end: currentTime + duration,
+      confidence: 0.95
+    });
+
+    currentTime += duration;
+  }
+
+  return segments;
+}
+
+/**
+ * Transcribe an audio file
+ * Tries Python service first, falls back to OpenAI
 async function transcribeAudio(filePath, options = {}) {
   try {
     // Verify file exists
@@ -37,52 +136,73 @@ async function transcribeAudio(filePath, options = {}) {
 
     console.log(`📁 Transcribing file: ${path.basename(filePath)} (${fileSizeInMB.toFixed(2)}MB)`);
 
-    // Create read stream
-    const audioFile = fs.createReadStream(filePath);
+    let result;
 
-    // Call Whisper API with verbose JSON response
-    const transcription = await openai.audio.transcriptions.create({
-      file: audioFile,
-      model: 'whisper-1',
-      language: options.language || undefined,
-      temperature: options.temperature || 0,
-      // Request verbose JSON to get word-level timestamps
-      response_format: 'verbose_json'
-    });
-
-    // Extract segments from verbose response
-    const segments = extractSegments(transcription);
-
-    // Build response
-    const result = {
-      transcript: transcription.text,
-      segments,
-      duration: transcription.duration || calculateDuration(segments),
-      language: transcription.language || 'unknown',
-      model: 'whisper-1',
-      provider: 'openai'
-    };
+    // Try Python service first (if SARVAM_API_KEY is set)
+    if (process.env.SARVAM_API_KEY && !options.forceOpenAI) {
+      try {
+        result = await transcribeWithPython(filePath, {
+          service: 'sarvam',
+          apiKey: process.env.SARVAM_API_KEY
+        });
+      } catch (error) {
+        console.warn('⚠️  Sarvam transcription failed, trying OpenAI...', error.message);
+        if (openai) {
+          result = await transcribeWithOpenAI(filePath, options);
+        } else {
+          throw new Error('No transcription service available');
+        }
+      }
+    } 
+    // Use OpenAI if available
+    else if (openai) {
+      result = await transcribeWithOpenAI(filePath, options);
+    }
+    // Fall back to Python service with OpenAI
+    else if (process.env.OPENAI_API_KEY) {
+      result = await transcribeWithPython(filePath, {
+        service: 'openai',
+        apiKey: process.env.OPENAI_API_KEY
+      });
+    }
+    else {
+      throw new Error('No transcription service configured. Set OPENAI_API_KEY or SARVAM_API_KEY');
+    }
 
     console.log(`✅ Transcription complete: ${result.transcript.substring(0, 50)}...`);
-    console.log(`⏱️  Duration: ${result.duration.toFixed(1)}s, Segments: ${segments.length}`);
+    console.log(`⏱️  Duration: ${result.duration.toFixed(1)}s, Segments: ${result.segments.length}`);
 
     return result;
   } catch (error) {
     console.error('❌ Transcription error:', error.message);
-    
-    // Re-throw with more context
-    if (error.status === 401) {
-      throw new Error('Invalid OpenAI API key');
-    }
-    if (error.status === 429) {
-      throw new Error('OpenAI API rate limit exceeded');
-    }
-    if (error.status === 413) {
-      throw new Error('File too large for transcription');
-    }
-    
     throw error;
   }
+}
+
+/**
+ * Transcribe with OpenAI Whisper API
+ */
+async function transcribeWithOpenAI(filePath, options = {}) {
+  const audioFile = fs.createReadStream(filePath);
+
+  const transcription = await openai.audio.transcriptions.create({
+    file: audioFile,
+    model: 'whisper-1',
+    language: options.language || undefined,
+    temperature: options.temperature || 0,
+    response_format: 'verbose_json'
+  });
+
+  const segments = extractSegments(transcription);
+
+  return {
+    transcript: transcription.text,
+    segments,
+    duration: transcription.duration || calculateDuration(segments),
+    language: transcription.language || 'unknown',
+    model: 'whisper-1',
+    provider: 'openai'
+  };
 }
 
 /**

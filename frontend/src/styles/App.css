@@ -1,5 +1,34 @@
 /**
  * App Component Styles - Premium, Cinematic, 16:9 Optimized
+ * 
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * COLOR CUSTOMIZATION GUIDE
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * 
+ * To customize colors for your brand, update the CSS variables below:
+ * 
+ * YOUR COLORS:
+ * • Primary Color: #000000 (Black)
+ * • Secondary Color: #e7000b (Red)
+ * • Text Color: #1a1a1a (Dark)
+ * • Loading Color: #e7000b (Red - matches secondary)
+ * 
+ * UPDATE THESE VARIABLES:
+ * --color-primary: Change from #0066FF to #000000
+ * --color-accent: Change from #0066FF to #e7000b
+ * --color-text: Change from #000000 to #1a1a1a (if needed)
+ * --color-loading: Change from #0066FF to #e7000b
+ * 
+ * EXAMPLE:
+ * :root {
+ *   --color-primary: #000000;           ← Your black primary
+ *   --color-accent: #e7000b;            ← Your red secondary
+ *   --color-text: #1a1a1a;              ← Your dark text
+ *   --gradient-accent: linear-gradient(135deg, #e7000b, #cc000a);
+ * }
+ * 
+ * The rest will automatically update throughout the app!
+ * ═══════════════════════════════════════════════════════════════════════════════
  */
 
 :root {
